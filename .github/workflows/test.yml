@@ -18,4 +18,8 @@ jobs:
           sudo /etc/init.d/mysql start
           sudo mysql --user=root --password=root < schema.sql
 
+      - name: Try export to compare
+        run: |
+          mysqldump -uroot -proot --compact --skip-quote-names it125_foodtruck > dump.sql
+
 
