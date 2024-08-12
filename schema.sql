@@ -92,11 +92,36 @@ ENGINE = InnoDB;
 -- ---------------------------------
 
 INSERT INTO patrons (name, email, news_opt_in) VALUES 
-('kermit', 'kermit.frog@sesamestreet.org', true),
+('bigbird', 'big.bird@sesamestreet.org', true) ,
+('elmo', 'elmo@sesamestreet.org', true) ,
+('oscar', 'oscar@sesamestreet.org', false) ,
+('kermit', 'kermit.frog@sesamestreet.org', true) ,
 ('misspiggy', 'miss.piggy@sesamestreet.org', false);
 
 INSERT INTO truckers (name, job, pay_rate, social_media) VALUES 
-('gordon', 'driver', 28, 'hellskitchen.tv'),
+('anthony', 'writer', 40, 'noreservations.tv') ,
+('jamie', 'sales', 40, 'foodfight.tv') ,
+('pati', 'manager', 40, 'mexicantable.tv') ,
+('gordon', 'driver', 28, 'hellskitchen.tv') ,
 ('andres', 'grill', 25, 'wck.org');
 
+INSERT INTO menus (name) VALUES 
+('regular') ,
+('specials') ,
+('vegetarian') ,
+('farmers market') ,
+('holiday');
 
+INSERT INTO menu_item (name, recipe, cost, menu_id) VALUES 
+('taco', 'allrecipes.com/1', 1, 1) ,
+('chowder', 'allrecipes.com/2', 2, 2) ,
+('avocado toast', 'allrecipes.com/3', 3, 3) ,
+('grilled cheese', 'allrecipes.com/4', 4, 4) ,
+('pumpkin pie', 'allrecipes.com/5', 5, 5);
+
+INSERT INTO events (name, promo_url, location, repeating, start, end, menu_id) VALUES 
+('lunch', 'meetup.com/1', 'university village', 'weekly', NOW(), DATE_ADD(NOW(), INTERVAL 3 MONTH), 1) ,
+('fest', 'meetup.com/2', 'sea-tac', 'monthly', NOW(), DATE_ADD(NOW(), INTERVAL 3 MONTH), 2) ,
+('pubrun', 'meetup.com/3', 'yonder cidery', 'weekly', NOW(), DATE_ADD(NOW(), INTERVAL 3 MONTH), 3) ,
+('market', 'meetup.com/4', 'molbaks', 'weekly', NOW(), DATE_ADD(NOW(), INTERVAL 3 MONTH), 4) ,
+('fair', 'meetup.com/5', 'marymoor park', 'annual', NOW(), DATE_ADD(NOW(), INTERVAL 3 MONTH), 5);

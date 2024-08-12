@@ -1,0 +1,21 @@
+name: Test SQL
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  test_sql:
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run script
+        run: |
+          sudo /etc/init.d/mysql start
+          sudo mysql --user=root --password=root < schema.sql
+
+
