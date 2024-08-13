@@ -42,15 +42,26 @@ CREATE TABLE `it125_foodtruck`.`menu_item` (
 )
 ENGINE = InnoDB;
 
+CREATE TABLE `it125_foodtruck`.`locations` (
+  `id`            INT          PRIMARY KEY AUTO_INCREMENT ,
+  `name`          VARCHAR(50)  NOT NULL UNIQUE ,
+  `longitude`     VARCHAR(24)  ,
+  `latitude`      VARCHAR(24)
+)
+ENGINE = InnoDB;
+
 CREATE TABLE `it125_foodtruck`.`events` (
   `id`            INT          PRIMARY KEY AUTO_INCREMENT ,
   `name`          VARCHAR(50)  NOT NULL UNIQUE ,
   `promo_url`     VARCHAR(255) ,
-  `location`      VARCHAR(128) ,
+  `location_id`   INT ,
   `repeating`     VARCHAR(12)                              COMMENT 'Repeating can be daily/weekly/monthly/etc' ,
   `start`         DATETIME ,
   `end`           DATETIME ,
   `menu_id`       INT          ,
+  CONSTRAINT events_fk_locations
+    FOREIGN KEY (location_id)
+    REFERENCES locations (id) ,
   CONSTRAINT events_fk_menus
     FOREIGN KEY (menu_id)
     REFERENCES menus (id)
@@ -87,6 +98,28 @@ CREATE TABLE `it125_foodtruck`.`order_item` (
 ENGINE = InnoDB;
 
 
+CREATE OR REPLACE VIEW events_view AS
+SELECT ee.name AS event, promo_url, repeating, start, end ,
+       ll.name AS location ,
+       mm.name AS menu
+FROM   events ee
+JOIN   locations ll ON ee.location_id = ll.id
+JOIN   menus mm ON ee.menu_id = mm.id
+;
+
+CREATE OR REPLACE VIEW orders_view AS
+SELECT oo.id AS order_id, oi.quantity, oi.price ,
+       mi.name AS menu_item ,
+       pp.name AS patron_name ,
+       tt.name AS cashier_name
+FROM   orders oo
+JOIN   order_item oi ON oo.id = oi.order_id
+JOIN   menu_item mi ON oi.menuitem_id = mi.id
+JOIN   patrons pp ON oo.patron_id = pp.id
+JOIN   truckers tt ON oo.till = tt.id
+;
+
+
 -- 
 -- it125 project (food truck data)
 -- ---------------------------------
@@ -119,9 +152,31 @@ INSERT INTO menu_item (name, recipe, cost, menu_id) VALUES
 ('grilled cheese', 'allrecipes.com/4', 4, 4) ,
 ('pumpkin pie', 'allrecipes.com/5', 5, 5);
 
-INSERT INTO events (name, promo_url, location, repeating, start, end, menu_id) VALUES 
-('lunch', 'meetup.com/1', 'university village', 'weekly', NOW(), DATE_ADD(NOW(), INTERVAL 3 MONTH), 1) ,
-('fest', 'meetup.com/2', 'sea-tac', 'monthly', NOW(), DATE_ADD(NOW(), INTERVAL 3 MONTH), 2) ,
-('pubrun', 'meetup.com/3', 'yonder cidery', 'weekly', NOW(), DATE_ADD(NOW(), INTERVAL 3 MONTH), 3) ,
-('market', 'meetup.com/4', 'molbaks', 'weekly', NOW(), DATE_ADD(NOW(), INTERVAL 3 MONTH), 4) ,
-('fair', 'meetup.com/5', 'marymoor park', 'annual', NOW(), DATE_ADD(NOW(), INTERVAL 3 MONTH), 5);
+INSERT INTO locations (name, longitude, latitude) VALUES 
+('university village', '47.6425777', '-122.3527938') ,
+('sea-tac', '47.4509445', '-122.3117667') ,
+('yonder cidery', '47.6760065', '-122.3614197') ,
+('molbaks', '47.7560223', '-122.206143') ,
+('marymoor park', '47.6468713', '-122.1556836');
+
+INSERT INTO events (name, promo_url, location_id, repeating, start, end, menu_id) VALUES 
+('lunch', 'meetup.com/1', 1, 'weekly', NOW(), DATE_ADD(NOW(), INTERVAL 3 MONTH), 1) ,
+('fest', 'meetup.com/2', 2, 'monthly', NOW(), DATE_ADD(NOW(), INTERVAL 3 MONTH), 2) ,
+('pubrun', 'meetup.com/3', 3, 'weekly', NOW(), DATE_ADD(NOW(), INTERVAL 3 MONTH), 3) ,
+('market', 'meetup.com/4', 4, 'weekly', NOW(), DATE_ADD(NOW(), INTERVAL 3 MONTH), 4) ,
+('fair', 'meetup.com/5', 5, 'annual', NOW(), DATE_ADD(NOW(), INTERVAL 3 MONTH), 5);
+
+INSERT INTO orders (created, patron_id, till) VALUES 
+(DATE_ADD(NOW(), INTERVAL 1 DAY), 1, 1) ,
+(DATE_ADD(NOW(), INTERVAL 2 DAY), 2, 2) ,
+(DATE_ADD(NOW(), INTERVAL 3 DAY), 3, 3) ,
+(DATE_ADD(NOW(), INTERVAL 4 DAY), 4, 4) ,
+(DATE_ADD(NOW(), INTERVAL 5 DAY), 5, 5);
+
+INSERT INTO order_item (quantity, price, order_id, menuitem_id) VALUES 
+(1, 1, 1, 1) ,
+(2, 2, 2, 2) ,
+(3, 3, 3, 3) ,
+(4, 4, 4, 4) ,
+(5, 5, 5, 5);
+
