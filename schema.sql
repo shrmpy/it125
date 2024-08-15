@@ -98,15 +98,23 @@ CREATE TABLE `it125_foodtruck`.`order_item` (
 ENGINE = InnoDB;
 
 
+CREATE OR REPLACE VIEW menus_view AS
+SELECT mm.name AS menu ,
+       mi.name AS menu_item ,
+       mi.recipe, mi.cost
+FROM   menus mm
+JOIN   menu_item mi ON mm.id = mi.menu_id
+;
 CREATE OR REPLACE VIEW events_view AS
 SELECT ee.name AS event, promo_url, repeating, start, end ,
        ll.name AS location ,
+       ll.longitude ,
+       ll.latitude ,
        mm.name AS menu
 FROM   events ee
 JOIN   locations ll ON ee.location_id = ll.id
 JOIN   menus mm ON ee.menu_id = mm.id
 ;
-
 CREATE OR REPLACE VIEW orders_view AS
 SELECT oo.id AS order_id, oi.quantity, oi.price ,
        mi.name AS menu_item ,
@@ -118,6 +126,68 @@ JOIN   menu_item mi ON oi.menuitem_id = mi.id
 JOIN   patrons pp ON oo.patron_id = pp.id
 JOIN   truckers tt ON oo.till = tt.id
 ;
+
+DROP FUNCTION IF EXISTS last_order_id;
+DELIMITER //
+CREATE FUNCTION last_order_id()
+RETURNS INT
+DETERMINISTIC READS SQL DATA
+BEGIN
+  DECLARE seq_var INT;
+
+  -- find the last order_id value
+  SELECT MAX(id) INTO seq_var FROM orders;
+ 
+  RETURN(seq_var);
+END//
+DELIMITER ;
+
+-- sp to create/link order line items
+DROP PROCEDURE IF EXISTS insert_orderitem;
+DELIMITER //
+CREATE PROCEDURE insert_orderitem
+(
+  order_id_param    INT ,
+  patron_id_param   INT ,
+  till_param        INT ,
+  quantity_param    INT ,
+  price_param       DECIMAL(9, 2) ,
+  menuitem_id_param INT
+)
+BEGIN
+  DECLARE sequence_pre INT;
+  DECLARE sequence_oid INT;
+  -- with null order_id_param, action is to create new order
+  IF order_id_param IS NULL THEN
+    SET sequence_pre = last_order_id();
+    INSERT INTO orders (created, patron_id, till) VALUES (SYSDATE(), patron_id_param, till_param);
+
+    -- new order should be sequence_pre + 1 
+    SET sequence_oid = last_order_id();
+    IF sequence_oid <> (sequence_pre + 1) THEN
+      SIGNAL SQLSTATE '22003'
+        SET MESSAGE_TEXT =
+          'Unexpected order_id, another insert may be happening at the same time (need transaction).' ,
+        MYSQL_ERRNO = 1146;
+    END IF;
+  ELSE
+    SET sequence_oid = order_id_param;
+  END IF;
+
+  -- link to new order data
+  INSERT INTO order_item
+  (   quantity, price, order_id, menuitem_id )
+  VALUES 
+  (
+      quantity_param,
+      price_param,
+      sequence_oid,
+      menuitem_id_param
+  );
+
+  SELECT * FROM order_item WHERE order_id = sequence_oid;
+END//
+DELIMITER ;
 
 
 -- 
@@ -166,17 +236,51 @@ INSERT INTO events (name, promo_url, location_id, repeating, start, end, menu_id
 ('market', 'meetup.com/4', 4, 'weekly', NOW(), DATE_ADD(NOW(), INTERVAL 3 MONTH), 4) ,
 ('fair', 'meetup.com/5', 5, 'annual', NOW(), DATE_ADD(NOW(), INTERVAL 3 MONTH), 5);
 
-INSERT INTO orders (created, patron_id, till) VALUES 
-(DATE_ADD(NOW(), INTERVAL 1 DAY), 1, 1) ,
-(DATE_ADD(NOW(), INTERVAL 2 DAY), 2, 2) ,
-(DATE_ADD(NOW(), INTERVAL 3 DAY), 3, 3) ,
-(DATE_ADD(NOW(), INTERVAL 4 DAY), 4, 4) ,
-(DATE_ADD(NOW(), INTERVAL 5 DAY), 5, 5);
+-- use sp to create orders
+CALL insert_orderitem(NULL, 1, 1, 1, 1, 1);
+CALL insert_orderitem(NULL, 2, 2, 2, 2, 2);
+CALL insert_orderitem(NULL, 3, 3, 3, 3, 3);
+CALL insert_orderitem(NULL, 4, 4, 4, 4, 4);
+CALL insert_orderitem(NULL, 5, 5, 5, 5, 5);
 
-INSERT INTO order_item (quantity, price, order_id, menuitem_id) VALUES 
-(1, 1, 1, 1) ,
-(2, 2, 2, 2) ,
-(3, 3, 3, 3) ,
-(4, 4, 4, 4) ,
-(5, 5, 5, 5);
+-- use sp to extra order line items
+CALL insert_orderitem(1, 1, 1, 2, 1.99, 2);
+CALL insert_orderitem(2, 2, 2, 3, 2.99, 3);
+CALL insert_orderitem(3, 3, 3, 4, 3.99, 4);
+CALL insert_orderitem(3, 3, 3, 5, 4.99, 5);
+CALL insert_orderitem(3, 3, 3, 1, 0.99, 1);
+CALL insert_orderitem(4, 4, 4, 5, 4.99, 5);
+CALL insert_orderitem(5, 5, 5, 1, 0.99, 1);
 
+-- 
+-- it125 project (food truck queries)
+-- ---------------------------------
+
+-- look up menu items
+SELECT   *
+FROM     menus_view
+;
+
+-- look up order items
+SELECT   *
+FROM     orders_view
+;
+
+-- look up weekly truck appearances
+SELECT   event, promo_url, menu, location, longitude, latitude
+FROM     events_view
+WHERE    repeating = 'weekly' AND end > SYSDATE()
+;
+
+-- newletter mailinglist
+SELECT   name, email
+FROM     patrons
+WHERE    news_opt_in = TRUE
+;
+
+-- look up most sales
+SELECT   cashier_name, COUNT(cashier_name) AS items_count
+FROM     orders_view
+GROUP BY 1
+ORDER BY 2 DESC
+;
