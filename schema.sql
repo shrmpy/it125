@@ -126,6 +126,10 @@ JOIN   menu_item mi ON oi.menuitem_id = mi.id
 JOIN   patrons pp ON oo.patron_id = pp.id
 JOIN   truckers tt ON oo.till = tt.id
 ;
+CREATE OR REPLACE VIEW patrons_view AS
+SELECT id, name, email, news_opt_in
+FROM   patrons
+;
 
 DROP FUNCTION IF EXISTS last_order_id;
 DELIMITER //
@@ -274,7 +278,7 @@ WHERE    repeating = 'weekly' AND end > SYSDATE()
 
 -- newletter mailinglist
 SELECT   name, email
-FROM     patrons
+FROM     patrons_view
 WHERE    news_opt_in = TRUE
 ;
 
