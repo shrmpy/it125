@@ -1,0 +1,9 @@
+version: "2"
+sql:
+  - schema: "sqlc-schema.sql"
+    queries: "sqlc-query.sql"
+    engine: "mysql"
+    gen:
+      go:
+        package: "data"
+        out: "data"
