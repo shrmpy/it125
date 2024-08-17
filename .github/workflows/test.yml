@@ -24,6 +24,7 @@ jobs:
           go-version: '1.22'
       - name: Go test
         run: |
+          go get github.com/go-sql-driver/mysql
           go test -v .
 
 
