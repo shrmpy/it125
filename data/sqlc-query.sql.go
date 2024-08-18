@@ -323,3 +323,40 @@ func (q *Queries) ListWeekly(ctx context.Context) ([]ListWeeklyRow, error) {
 	}
 	return items, nil
 }
+
+const menuItem = `-- name: MenuItem :one
+SELECT   id, name, recipe, cost, menu_id
+FROM     menu_item
+WHERE    id = ? LIMIT 1
+`
+
+func (q *Queries) MenuItem(ctx context.Context, id int32) (MenuItem, error) {
+	row := q.db.QueryRowContext(ctx, menuItem, id)
+	var i MenuItem
+	err := row.Scan(
+		&i.ID,
+		&i.Name,
+		&i.Recipe,
+		&i.Cost,
+		&i.MenuID,
+	)
+	return i, err
+}
+
+const patron = `-- name: Patron :one
+SELECT   id, name, email, news_opt_in
+FROM     patrons
+WHERE    id = ? LIMIT 1
+`
+
+func (q *Queries) Patron(ctx context.Context, id int32) (Patron, error) {
+	row := q.db.QueryRowContext(ctx, patron, id)
+	var i Patron
+	err := row.Scan(
+		&i.ID,
+		&i.Name,
+		&i.Email,
+		&i.NewsOptIn,
+	)
+	return i, err
+}

@@ -3,6 +3,11 @@
 SELECT   *
 FROM     menus_view;
 
+-- name: MenuItem :one
+SELECT   *
+FROM     menu_item
+WHERE    id = ? LIMIT 1;
+
 
 -- name: ListOrders :many
 SELECT   *
@@ -34,6 +39,10 @@ FROM     orders_view
 GROUP BY 1, 2, 3
 ORDER BY 3 DESC;
 
+-- name: Patron :one
+SELECT   *
+FROM     patrons
+WHERE    id = ? LIMIT 1;
 
 -- name: CreatePatron :execresult
 INSERT INTO patrons (
