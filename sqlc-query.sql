@@ -32,12 +32,17 @@ FROM     orders_view
 GROUP BY 1
 ORDER BY 2 DESC;
 
-
 -- name: ListPopular :many
 SELECT   location_name, longitude, latitude, COUNT(location_name) AS items_count
 FROM     orders_view
 GROUP BY 1, 2, 3
 ORDER BY 3 DESC;
+
+-- name: SellerItem :many
+SELECT   menu_item, COUNT(menu_item) AS items_count
+FROM     orders_view
+GROUP BY 1
+ORDER BY 2 DESC;
 
 -- name: Patron :one
 SELECT   *

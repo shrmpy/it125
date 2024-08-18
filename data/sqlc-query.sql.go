@@ -360,3 +360,38 @@ func (q *Queries) Patron(ctx context.Context, id int32) (Patron, error) {
 	)
 	return i, err
 }
+
+const sellerItem = `-- name: SellerItem :many
+SELECT   menu_item, COUNT(menu_item) AS items_count
+FROM     orders_view
+GROUP BY 1
+ORDER BY 2 DESC
+`
+
+type SellerItemRow struct {
+	MenuItem   string
+	ItemsCount int64
+}
+
+func (q *Queries) SellerItem(ctx context.Context) ([]SellerItemRow, error) {
+	rows, err := q.db.QueryContext(ctx, sellerItem)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []SellerItemRow
+	for rows.Next() {
+		var i SellerItemRow
+		if err := rows.Scan(&i.MenuItem, &i.ItemsCount); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}

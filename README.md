@@ -17,6 +17,22 @@ Share link to
 go test -v .
 ```
 
+### Pie chart example
+1. Modify the random order item generate parameters in cmd/piechart.go
+2. Build cmd/piechart.go
+3. export MySQL env vars
+
+```
+go build -o test cmd/*.go
+export DB_HOST="127.0.0.1"
+export DB_PORT="3306"
+export DB_USER="root"
+export DB_PASS="root"
+export DB_DATABASE="it125_foodtruck"
+./test
+```
+
+
 ### Notes
 Modifying sqlc-schema.sql or sqlc-query.sql requires re-generating the files in the data subdir
 ```
@@ -24,6 +40,8 @@ sqlc generate
 ```
 
 ## Credits
+
+Golang [Pie with echarts](https://github.com/go-echarts/examples/tree/master/examples)
 
 Golang [SQL types with sqlc](https://dev.to/eminetto/creating-an-api-using-go-and-sqlc-364o)
 
